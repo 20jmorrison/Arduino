@@ -8,17 +8,24 @@ Date: 12/24/2023
 #define BUTTON 4
 #define BAUD 9600
 #define NUM_SEG_PINS 7
+#define SPAWN_INTERVAL 1000
 
 #include <LiquidCrystal.h>
 #include "MultiDisplay.h"
 #include "Sprites.h"
+#include "Obstacle.h"
 
 const int rs = 21, en = 20, d4 = 19, d5 = 18, d6 = 17, d7 = 16;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
-MultiDisplay DisplayDriver;
+MultiDisplay ScoreDriver;
+Obstacle ObstacleDriver;
 
 bool gameStarted = false;
+bool lcdNeedsClearing = false;
+unsigned long prevMillis = 0;
 int score = 0;
+int speed = 4;
+
 
 void setup() {
   Serial.begin(BAUD);
@@ -54,14 +61,65 @@ void setup() {
 
 
 void loop() {
-  DisplayDriver.displayNumber(score);
+  if (lcdNeedsClearing) {     // Used because lcd can't be cleared from an interrupt function, and I need some way to clear the display on button press
+    lcd.clear();              // Solution was to use a flag
+    lcdNeedsClearing = false;
+  }
+
+  if (gameStarted) {
+    if (millis() - prevMillis >= SPAWN_INTERVAL) {
+      prevMillis = millis();
+      Obstacle::ObstacleType newObstacleType;
+      newObstacleType = selectRandomObstacleType();
+      ObstacleDriver.sendObstacle(newObstacleType, speed);  // Generating a new obstacle and sending it to the screen
+      if ((score % 3 == 0) && speed < 12) {
+        speed++;
+      }
+
+      score++;
+    }
+
+    ScoreDriver.displayNumber(score);
+    int dinoYPos = digitalRead(BUTTON);
+    displayDino(dinoYPos);
+
+    if (ObstacleDriver.updateObstacles(lcd, dinoYPos)) { // updateObstacles will return true if there's a collision
+      gameOver();
+    }
+  }
+}
+
+void displayDino(int yPos){
+  int posToErase = (yPos == 1) ? 0 : 1;
+  lcd.setCursor(2, posToErase);
+  lcd.write(" ");
+  lcd.setCursor(2, yPos);
+  lcd.write((uint8_t)7);
+}
+
+void gameOver(){
+  gameStarted = false;
+  lcd.setCursor(0, 0);
+  lcd.clear();
+  lcd.print("GAME LOST");
+  lcd.setCursor(0, 1);
+  lcd.print("SCORE: ");
+  lcd.print(score);
 }
 
 
 void buttonPress(){
   if(!gameStarted){
+    score = 0;
+    speed = 4;
+    ObstacleDriver.resetObstacles();
     gameStarted = true;
+    lcdNeedsClearing = true;
   }
-  score++;
-  Serial.println("Button Has Been Pressed");
+}
+
+
+Obstacle::ObstacleType selectRandomObstacleType() {
+  int typeNum = rand() % 5;
+  return static_cast<Obstacle::ObstacleType>(typeNum);
 }

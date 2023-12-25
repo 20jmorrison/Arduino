@@ -7,7 +7,7 @@
 **************************************/
 
 
-#include "LiquidCrystal_I2C.h"
+#include "LiquidCrystal.h"
 #define MAX_OBSTACLES 4
 
 class Obstacle {
@@ -15,7 +15,7 @@ class Obstacle {
     enum ObstacleType {CACTUS, DOUBLE_CACTUS, BIRD, ROCK, METEOR};  // Makes the program a bit more intuitive and easier to read
     Obstacle();
     void sendObstacle(ObstacleType OBSTACLE_TO_SEND, int OBSTACLE_SPEED);
-    bool updateObstacles(LiquidCrystal_I2C &LCD, int dinoYPos);
+    bool updateObstacles(LiquidCrystal &LCD, int dinoYPos);
     void resetObstacles();
 
   private:

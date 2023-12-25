@@ -46,7 +46,7 @@ void Obstacle::sendObstacle(ObstacleType OBSTACLE_TO_SEND, int OBSTACLE_SPEED) {
 // Param LCD: Pointer to LCD display
 // Param dinoYPos: Y-Position of dino
 // Return: Returns true if there's been a collision, false if no collision
-bool Obstacle::updateObstacles(LiquidCrystal_I2C &LCD, int dinoYPos) {
+bool Obstacle::updateObstacles(LiquidCrystal &LCD, int dinoYPos) {
   bool collisionEncountered = false;
   counter++;
   for (int currObs = 0; currObs < obstacleIndex; currObs++) { // Looping through array of obstacles and updating each one's position
